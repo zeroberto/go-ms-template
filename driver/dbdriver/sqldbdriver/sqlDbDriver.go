@@ -24,12 +24,12 @@ func (driver *SQLDBDriver) PrepareAndExecute(query string, args ...interface{}) 
 	defer stmt.Close()
 
 	if err != nil {
-		return nil, &dbdriver.DatabaseDriverError{Cause: err}
+		return nil, &dbdriver.Error{Cause: err}
 	}
 
 	result, err := stmt.Exec(args...)
 	if err != nil {
-		return nil, &dbdriver.DatabaseDriverError{Cause: err}
+		return nil, &dbdriver.Error{Cause: err}
 	}
 
 	return result, err
