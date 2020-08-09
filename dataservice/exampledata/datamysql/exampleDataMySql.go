@@ -18,6 +18,8 @@ const (
 	PersistExample string = `INSERT INTO example (name, useful, created_at) VALUES (?, ?, ?)`
 	// QueryExample represents a search query for Examples in the base
 	QueryExample string = `SELECT * FROM example`
+	// QueryActiveExamples represents a search query for active Examples in the base
+	QueryActiveExamples string = `SELECT * FROM example WHERE deactivated_at IS NULL`
 	// QueryExampleByID represents a search query for Example by ID in the base
 	QueryExampleByID string = `SELECT * FROM example WHERE id = ?`
 	// QueryExampleByName represents a search query for Example by name in the base
@@ -69,6 +71,30 @@ func (ds *ExampleDataServiceMySQL) Delete(ID int64) error {
 	}
 
 	return nil
+}
+
+// FindActives is responsible for returning all examples that are active from the repository
+// in a MySQL Database
+func (ds *ExampleDataServiceMySQL) FindActives() ([]model.Example, error) {
+	rows, err := ds.sqlDriver.Query(QueryActiveExamples)
+
+	defer rows.Close()
+
+	if err != nil {
+		return nil, &dataservice.Error{Cause: err}
+	}
+
+	examples := []model.Example{}
+
+	for rows.Next() {
+		example, err := rowsToExample(rows)
+		if err != nil {
+			return nil, &dataservice.Error{Cause: err}
+		}
+		examples = append(examples, *example)
+	}
+
+	return examples, nil
 }
 
 // FindAll is responsible for returning all examples from the repository

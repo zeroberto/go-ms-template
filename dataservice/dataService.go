@@ -14,6 +14,8 @@ type ExampleDataService interface {
 	Create(example *model.Example) (persistedExample *model.Example, err error)
 	// Delete is responsible for physically removing Example from the repository
 	Delete(ID int64) error
+	// FindActives is responsible for returning all examples that are active from the repository
+	FindActives() ([]model.Example, error)
 	// FindAll is responsible for returning all examples from the repository
 	FindAll() ([]model.Example, error)
 	// FindByID is responsible for returning an Example from the repository
