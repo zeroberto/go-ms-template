@@ -1,0 +1,10 @@
+ALTER SCHEMA `example_db` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_general_ci;
+
+CREATE TABLE `example_db`.`example` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(100) NOT NULL,
+  `useful` TINYINT(1) NULL DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `deactivated_at` TIMESTAMP NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `example_name_UNIQUE` (`name` ASC) VISIBLE);

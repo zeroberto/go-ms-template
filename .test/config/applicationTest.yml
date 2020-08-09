@@ -1,0 +1,4 @@
+sqlDbConfig: &sqlDbConfig
+  type: test
+  host: host
+  port: 1

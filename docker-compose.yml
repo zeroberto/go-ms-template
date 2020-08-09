@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  web:
+    restart: always
+    build: .
+    image: go-ms-template
+    ports: 
+      - 8082:8080
+    links:
+      - mysql
+
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_db_root_password
+      MYSQL_DATABASE: example_db
+      MYSQL_USER: admin
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_db_admin_password
+      SSH_SECRET_FILE: /run/secrets/ssh_secret
+    ports:
+      - 3306:3306
+    volumes:
+      - ./config/db/mysql/scripts/:/docker-entrypoint-initdb.d/
+      - /mysql:/var/lib/mysql
+    secrets:
+      - mysql_db_admin_password
+      - mysql_db_root_password
+
+secrets:
+  mysql_db_admin_password:
+    file: ./config/db/mysql/secrets/mysql_db_admin_password
+  mysql_db_root_password:
+    file: ./config/db/mysql/secrets/mysql_db_root_password
