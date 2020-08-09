@@ -6,12 +6,9 @@ import (
 	"time"
 
 	"github.com/zeroberto/go-ms-template/dataservice"
-
-	"github.com/zeroberto/go-ms-template/usecase"
-
-	"github.com/zeroberto/go-ms-template/usecase/creation"
-
 	"github.com/zeroberto/go-ms-template/model"
+	"github.com/zeroberto/go-ms-template/usecase"
+	"github.com/zeroberto/go-ms-template/usecase/example/creation"
 )
 
 func TestCreateExample(t *testing.T) {
@@ -50,7 +47,7 @@ func TestCreateExample(t *testing.T) {
 	}
 }
 
-func TestCreateExampleWhenDSECreateReturnsErrorThenFailure(t *testing.T) {
+func TestCreateExampleWhenEDSCreateReturnsErrorThenFailure(t *testing.T) {
 	expected := &usecase.Error{Cause: errors.New("error")}
 
 	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
@@ -140,7 +137,7 @@ func TestUpdateExample(t *testing.T) {
 	}
 }
 
-func TestUpdateExampleDSEUpdateThenFailure(t *testing.T) {
+func TestUpdateExampleWhenEDSUpdateReturnsErrorThenFailure(t *testing.T) {
 	expected := &usecase.Error{Cause: errors.New("error")}
 
 	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
@@ -299,6 +296,33 @@ func TestUpdateExamplePropertiesWhenPropertyIsNameAndNameAlreadyExistsThenFailur
 
 	if got == nil || expected.Error() != got.Error() {
 		t.Errorf("UpdateExample() failed, expected %v, got %v", expected, got)
+	}
+}
+
+func TestUpdateExamplePropertiesWhenEDSUpdatePropertiesReturnsErrorThenFailure(t *testing.T) {
+	expected := &usecase.Error{Cause: errors.New("error")}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindByIDMock = func(ID int64) (*model.Example, error) {
+		return &model.Example{}, nil
+	}
+	edsFindByNameMock = func(name string) (*model.Example, error) {
+		return nil, nil
+	}
+	edsUpdatePropertiesMock = func(ID int64, properties map[string]interface{}) error {
+		return expected
+	}
+
+	var ecuc usecase.ExampleCreationUseCase = &creation.ExampleCreationUseCaseImpl{EDS: eds}
+
+	example, got := ecuc.UpdateExampleProperties(1, map[string]interface{}{})
+
+	if example != nil {
+		t.Errorf("UpdateExampleProperties() failed, expected %v, got %v", nil, example)
+	}
+
+	if got == nil || expected.Error() != got.Error() {
+		t.Errorf("UpdateExampleProperties() failed, expected %v, got %v", expected, got)
 	}
 }
 
