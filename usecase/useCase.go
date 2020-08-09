@@ -13,7 +13,7 @@ type ExampleCreationUseCase interface {
 	// UpdateExample is responsible for updating the complete Example model
 	UpdateExample(example *model.Example) (*model.Example, error)
 	// UpdateExampleProperties is responsible for updating partial properties of the Example model
-	UpdateExampleProperties(example *model.Example) (*model.Example, error)
+	UpdateExampleProperties(ID int64, properties map[string]interface{}) (*model.Example, error)
 }
 
 // ExampleReadUseCase is responsible for providing the business methods for
