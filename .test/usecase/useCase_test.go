@@ -456,7 +456,49 @@ func TestGetExampleWhenEDSFindByIDReturnsErrorThenFailure(t *testing.T) {
 	}
 
 	if got == nil || expected.Error() != got.Error() {
-		t.Errorf("ListExamples() failed, expected %v, got %v", expected, got)
+		t.Errorf("GetExample() failed, expected %v, got %v", expected, got)
+	}
+}
+
+func TestGetExampleByName(t *testing.T) {
+	expected := &model.Example{ID: 1, Name: "test"}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindByNameMock = func(name string) (*model.Example, error) {
+		return expected, nil
+	}
+
+	var eruc usecase.ExampleReadUseCase = &read.ExampleReadUseCaseImpl{EDS: eds}
+
+	got, err := eruc.GetExampleByName("test")
+
+	if err != nil {
+		t.Errorf("GetExampleByName() failed, error %v", err)
+	}
+
+	if !reflect.DeepEqual(expected, got) {
+		t.Errorf("GetExampleByName() failed, expected %v, got %v", expected, got)
+	}
+}
+
+func TestGetExampleByNameWhenEDSFindByNameReturnsErrorThenFailure(t *testing.T) {
+	expected := &usecase.Error{Cause: errors.New("error")}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindByNameMock = func(name string) (*model.Example, error) {
+		return nil, expected
+	}
+
+	var eruc usecase.ExampleReadUseCase = &read.ExampleReadUseCaseImpl{EDS: eds}
+
+	example, got := eruc.GetExampleByName("test")
+
+	if example != nil {
+		t.Errorf("GetExampleByName() failed, expected %v, got %v", nil, example)
+	}
+
+	if got == nil || expected.Error() != got.Error() {
+		t.Errorf("GetExampleByName() failed, expected %v, got %v", expected, got)
 	}
 }
 
