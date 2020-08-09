@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -21,7 +22,7 @@ func TestCreateExample(t *testing.T) {
 		CreatedAt: fixedTime,
 	}
 
-	dse := &exampleDataServiceMock{}
+	dse := exampleDataServiceMock{}
 	dseFindByNameMock = func(name string) (*model.Example, error) {
 		return nil, nil
 	}
@@ -30,7 +31,7 @@ func TestCreateExample(t *testing.T) {
 		return example, nil
 	}
 
-	ecuc := creation.ExampleCreationUseCaseImpl{EDS: dse}
+	ecuc := creation.ExampleCreationUseCaseImpl{EDS: &dse}
 
 	got, err := ecuc.CreateExample(&model.Example{
 		Name:      "test",
@@ -47,20 +48,48 @@ func TestCreateExample(t *testing.T) {
 	}
 }
 
+func TestCreateExampleWhenDSECreateReturnsErrorThenFailure(t *testing.T) {
+	expected := &usecase.Error{Cause: errors.New("error")}
+
+	dse := exampleDataServiceMock{}
+	dseFindByNameMock = func(name string) (*model.Example, error) {
+		return nil, nil
+	}
+	dseCreateMock = func(example *model.Example) (persistedExample *model.Example, err error) {
+		return nil, expected
+	}
+
+	ecuc := creation.ExampleCreationUseCaseImpl{EDS: &dse}
+
+	example, got := ecuc.CreateExample(&model.Example{})
+
+	if example != nil {
+		t.Errorf("CreateExample() failed, expected %v, got %v", nil, example)
+	}
+
+	if got == nil || expected.Error() != got.Error() {
+		t.Errorf("CreateExample() failed, expected %v, got %v", expected, got)
+	}
+}
+
 func TestCreateExampleWhenNameAlreadyExistsThenFailure(t *testing.T) {
 	expected := &usecase.Error{Message: "Example already exists"}
 
-	dse := &exampleDataServiceMock{}
+	dse := exampleDataServiceMock{}
 	dseFindByNameMock = func(name string) (*model.Example, error) {
 		return nil, expected
 	}
 
-	ecuc := creation.ExampleCreationUseCaseImpl{EDS: dse}
+	ecuc := creation.ExampleCreationUseCaseImpl{EDS: &dse}
 
-	_, got := ecuc.CreateExample(&model.Example{})
+	example, got := ecuc.CreateExample(&model.Example{})
 
-	if got == nil || expected != got {
-		t.Errorf("CreateExample() failed, expected %v, got %v", expected, nil)
+	if example != nil {
+		t.Errorf("CreateExample() failed, expected %v, got %v", nil, example)
+	}
+
+	if got == nil || expected.Error() != got.Error() {
+		t.Errorf("CreateExample() failed, expected %v, got %v", expected, got)
 	}
 }
 
