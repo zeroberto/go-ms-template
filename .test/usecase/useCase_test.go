@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/zeroberto/go-ms-template/dataservice"
+
 	"github.com/zeroberto/go-ms-template/usecase"
 
 	"github.com/zeroberto/go-ms-template/usecase/creation"
@@ -22,7 +24,7 @@ func TestCreateExample(t *testing.T) {
 		CreatedAt: fixedTime,
 	}
 
-	dse := exampleDataServiceMock{}
+	var dse dataservice.ExampleDataService = &exampleDataServiceMock{}
 	dseFindByNameMock = func(name string) (*model.Example, error) {
 		return nil, nil
 	}
@@ -31,7 +33,7 @@ func TestCreateExample(t *testing.T) {
 		return example, nil
 	}
 
-	ecuc := creation.ExampleCreationUseCaseImpl{EDS: &dse}
+	var ecuc usecase.ExampleCreationUseCase = &creation.ExampleCreationUseCaseImpl{EDS: dse}
 
 	got, err := ecuc.CreateExample(&model.Example{
 		Name:      "test",
@@ -51,7 +53,7 @@ func TestCreateExample(t *testing.T) {
 func TestCreateExampleWhenDSECreateReturnsErrorThenFailure(t *testing.T) {
 	expected := &usecase.Error{Cause: errors.New("error")}
 
-	dse := exampleDataServiceMock{}
+	var dse dataservice.ExampleDataService = &exampleDataServiceMock{}
 	dseFindByNameMock = func(name string) (*model.Example, error) {
 		return nil, nil
 	}
@@ -59,7 +61,7 @@ func TestCreateExampleWhenDSECreateReturnsErrorThenFailure(t *testing.T) {
 		return nil, expected
 	}
 
-	ecuc := creation.ExampleCreationUseCaseImpl{EDS: &dse}
+	var ecuc usecase.ExampleCreationUseCase = &creation.ExampleCreationUseCaseImpl{EDS: dse}
 
 	example, got := ecuc.CreateExample(&model.Example{})
 
@@ -75,12 +77,12 @@ func TestCreateExampleWhenDSECreateReturnsErrorThenFailure(t *testing.T) {
 func TestCreateExampleWhenNameAlreadyExistsThenFailure(t *testing.T) {
 	expected := &usecase.Error{Message: "Example already exists"}
 
-	dse := exampleDataServiceMock{}
+	var dse dataservice.ExampleDataService = &exampleDataServiceMock{}
 	dseFindByNameMock = func(name string) (*model.Example, error) {
 		return nil, expected
 	}
 
-	ecuc := creation.ExampleCreationUseCaseImpl{EDS: &dse}
+	var ecuc usecase.ExampleCreationUseCase = &creation.ExampleCreationUseCaseImpl{EDS: dse}
 
 	example, got := ecuc.CreateExample(&model.Example{})
 
@@ -110,7 +112,7 @@ func TestUpdateExample(t *testing.T) {
 		CreatedAt: createdAtTime,
 	}
 
-	dse := exampleDataServiceMock{}
+	var dse dataservice.ExampleDataService = &exampleDataServiceMock{}
 	dseFindByIDMock = func(ID int64) (*model.Example, error) {
 		return &existing, nil
 	}
@@ -121,7 +123,7 @@ func TestUpdateExample(t *testing.T) {
 		return &expected, nil
 	}
 
-	ecuc := creation.ExampleCreationUseCaseImpl{EDS: &dse}
+	var ecuc usecase.ExampleCreationUseCase = &creation.ExampleCreationUseCaseImpl{EDS: dse}
 
 	got, err := ecuc.UpdateExample(&model.Example{
 		Name:      "updated",
@@ -136,16 +138,12 @@ func TestUpdateExample(t *testing.T) {
 	if expected != *got {
 		t.Errorf("UpdateExample() failed, expected %v, got %v", expected, got)
 	}
-
-	if createdAtTime != expected.CreatedAt {
-		t.Errorf("UpdateExample() failed, expected %v, got %v", createdAtTime, expected.CreatedAt)
-	}
 }
 
 func TestUpdateExampleDSEUpdateThenFailure(t *testing.T) {
 	expected := &usecase.Error{Cause: errors.New("error")}
 
-	dse := exampleDataServiceMock{}
+	var dse dataservice.ExampleDataService = &exampleDataServiceMock{}
 	dseFindByIDMock = func(ID int64) (*model.Example, error) {
 		return &model.Example{}, nil
 	}
@@ -156,7 +154,7 @@ func TestUpdateExampleDSEUpdateThenFailure(t *testing.T) {
 		return nil, expected
 	}
 
-	ecuc := creation.ExampleCreationUseCaseImpl{EDS: &dse}
+	var ecuc usecase.ExampleCreationUseCase = &creation.ExampleCreationUseCaseImpl{EDS: dse}
 
 	example, got := ecuc.UpdateExample(&model.Example{})
 
@@ -172,12 +170,12 @@ func TestUpdateExampleDSEUpdateThenFailure(t *testing.T) {
 func TestUpdateExampleWhenIDNotExistsThenFailure(t *testing.T) {
 	expected := &usecase.Error{Message: "No example found for this ID"}
 
-	dse := exampleDataServiceMock{}
+	var dse dataservice.ExampleDataService = &exampleDataServiceMock{}
 	dseFindByIDMock = func(ID int64) (*model.Example, error) {
 		return nil, nil
 	}
 
-	ecuc := creation.ExampleCreationUseCaseImpl{EDS: &dse}
+	var ecuc usecase.ExampleCreationUseCase = &creation.ExampleCreationUseCaseImpl{EDS: dse}
 
 	example, got := ecuc.UpdateExample(&model.Example{})
 
@@ -193,17 +191,107 @@ func TestUpdateExampleWhenIDNotExistsThenFailure(t *testing.T) {
 func TestUpdateExampleWhenNameAlreadyExistsThenFailure(t *testing.T) {
 	expected := &usecase.Error{Message: "Example already exists"}
 
-	dse := exampleDataServiceMock{}
+	var dse dataservice.ExampleDataService = &exampleDataServiceMock{}
+	dseFindByIDMock = func(ID int64) (*model.Example, error) {
+		return &model.Example{ID: 1}, nil
+	}
+	dseFindByNameMock = func(name string) (*model.Example, error) {
+		return &model.Example{ID: 2}, nil
+	}
+
+	var ecuc usecase.ExampleCreationUseCase = &creation.ExampleCreationUseCaseImpl{EDS: dse}
+
+	example, got := ecuc.UpdateExample(&model.Example{ID: 1})
+
+	if example != nil {
+		t.Errorf("UpdateExample() failed, expected %v, got %v", nil, example)
+	}
+
+	if got == nil || expected.Error() != got.Error() {
+		t.Errorf("UpdateExample() failed, expected %v, got %v", expected, got)
+	}
+}
+
+func TestUpdateExamplePropertiesWhenPropertyIsUsefulThenSuccess(t *testing.T) {
+	currentFixedTime := time.Now()
+	createdAtTime := currentFixedTime.Add(-1 * time.Minute)
+
+	expected := model.Example{
+		ID:        1,
+		Name:      "shouldNotUpdated",
+		Useful:    true,
+		CreatedAt: createdAtTime,
+	}
+	existing := model.Example{
+		ID:        1,
+		Name:      "shouldNotUpdated",
+		Useful:    false,
+		CreatedAt: createdAtTime,
+	}
+
+	var dse dataservice.ExampleDataService = &exampleDataServiceMock{}
+	dseFindByIDMock = func(ID int64) (*model.Example, error) {
+		return &existing, nil
+	}
+	dseUpdatePropertiesMock = func(ID int64, properties map[string]interface{}) error {
+		existing.Useful = properties["Useful"].(bool)
+		return nil
+	}
+
+	var ecuc usecase.ExampleCreationUseCase = &creation.ExampleCreationUseCaseImpl{EDS: dse}
+
+	got, err := ecuc.UpdateExampleProperties(1, map[string]interface{}{
+		"Useful": true,
+	})
+
+	if err != nil {
+		t.Errorf("UpdateExampleProperties() failed, error %v", err)
+	}
+
+	if expected != *got {
+		t.Errorf("UpdateExampleProperties() failed, expected %v, got %v", expected, got)
+	}
+}
+
+func TestUpdateExamplePropertiesWhenPropertyNotExistsThenFailure(t *testing.T) {
+	expected := &usecase.Error{Message: "property Wrong does not exist or cannot be updated"}
+
+	var dse dataservice.ExampleDataService = &exampleDataServiceMock{}
 	dseFindByIDMock = func(ID int64) (*model.Example, error) {
 		return &model.Example{}, nil
 	}
-	dseFindByNameMock = func(name string) (*model.Example, error) {
-		return &model.Example{}, nil
+
+	var ecuc usecase.ExampleCreationUseCase = &creation.ExampleCreationUseCaseImpl{EDS: dse}
+
+	example, got := ecuc.UpdateExampleProperties(1, map[string]interface{}{
+		"Wrong": 1,
+	})
+
+	if example != nil {
+		t.Errorf("UpdateExample() failed, expected %v, got %v", nil, example)
 	}
 
-	ecuc := creation.ExampleCreationUseCaseImpl{EDS: &dse}
+	if got == nil || expected.Error() != got.Error() {
+		t.Errorf("UpdateExample() failed, expected %v, got %v", expected, got)
+	}
+}
 
-	example, got := ecuc.UpdateExample(&model.Example{})
+func TestUpdateExamplePropertiesWhenPropertyIsNameAndNameAlreadyExistsThenFailure(t *testing.T) {
+	expected := &usecase.Error{Message: "Example already exists"}
+
+	var dse dataservice.ExampleDataService = &exampleDataServiceMock{}
+	dseFindByIDMock = func(ID int64) (*model.Example, error) {
+		return &model.Example{ID: 1}, nil
+	}
+	dseFindByNameMock = func(name string) (*model.Example, error) {
+		return &model.Example{ID: 2}, nil
+	}
+
+	var ecuc usecase.ExampleCreationUseCase = &creation.ExampleCreationUseCaseImpl{EDS: dse}
+
+	example, got := ecuc.UpdateExampleProperties(1, map[string]interface{}{
+		"Name": "shouldNotUpdated",
+	})
 
 	if example != nil {
 		t.Errorf("UpdateExample() failed, expected %v, got %v", nil, example)
@@ -228,7 +316,7 @@ var dseLogicalDeletionMock func(ID int64, deactivationDatetime time.Time) error
 
 var dseUpdateMock func(example *model.Example) (updatedExample *model.Example, err error)
 
-var dseUpdatePropertyMock func(propertyName string, propertyValue interface{}) error
+var dseUpdatePropertiesMock func(ID int64, properties map[string]interface{}) error
 
 type exampleDataServiceMock struct{}
 
@@ -260,6 +348,6 @@ func (eds *exampleDataServiceMock) Update(example *model.Example) (updatedExampl
 	return dseUpdateMock(example)
 }
 
-func (eds *exampleDataServiceMock) UpdateProperty(propertyName string, propertyValue interface{}) error {
-	return dseUpdatePropertyMock(propertyName, propertyValue)
+func (eds *exampleDataServiceMock) UpdateProperties(ID int64, properties map[string]interface{}) error {
+	return dseUpdatePropertiesMock(ID, properties)
 }
