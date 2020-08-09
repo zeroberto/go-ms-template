@@ -3,6 +3,7 @@ package datamysql
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/zeroberto/go-ms-template/dataservice"
@@ -23,8 +24,8 @@ const (
 	QueryExampleByName string = `SELECT * FROM example WHERE id = ?`
 	// UpdateExample represents a sql command to update an Example in the base
 	UpdateExample string = `UPDATE example SET name = ?, useful = ? WHERE id = ?`
-	// UpdateExampleProperty represents a sql command to update an Example in the base
-	UpdateExampleProperty string = `UPDATE example SET %s = ? WHERE id = ?`
+	// UpdateExampleProperties represents a sql command to update an Example in the base
+	UpdateExampleProperties string = `UPDATE example SET %s WHERE id = ?`
 	// DeactivateExample represents a sql command to update the deactivate column of the Example in the base
 	DeactivateExample string = `UPDATE example SET deactivated_at = ? WHERE id = ?`
 )
@@ -45,12 +46,12 @@ func (ds *ExampleDataServiceMySQL) Create(example *model.Example) (persistedExam
 		example.CreatedAt,
 	)
 	if err != nil {
-		return nil, &dataservice.DSError{Cause: err}
+		return nil, &dataservice.Error{Cause: err}
 	}
 
 	lastInsertID, err := rows.LastInsertId()
 	if err != nil {
-		return nil, &dataservice.DSError{Cause: err}
+		return nil, &dataservice.Error{Cause: err}
 	}
 
 	example.ID = lastInsertID
@@ -64,7 +65,7 @@ func (ds *ExampleDataServiceMySQL) Delete(ID int64) error {
 	_, err := ds.sqlDriver.Execute(DeleteExample, ID)
 
 	if err != nil {
-		return &dataservice.DSError{Cause: err}
+		return &dataservice.Error{Cause: err}
 	}
 
 	return nil
@@ -78,7 +79,7 @@ func (ds *ExampleDataServiceMySQL) FindAll() ([]model.Example, error) {
 	defer rows.Close()
 
 	if err != nil {
-		return nil, &dataservice.DSError{Cause: err}
+		return nil, &dataservice.Error{Cause: err}
 	}
 
 	examples := []model.Example{}
@@ -86,7 +87,7 @@ func (ds *ExampleDataServiceMySQL) FindAll() ([]model.Example, error) {
 	for rows.Next() {
 		example, err := rowsToExample(rows)
 		if err != nil {
-			return nil, &dataservice.DSError{Cause: err}
+			return nil, &dataservice.Error{Cause: err}
 		}
 		examples = append(examples, *example)
 	}
@@ -102,7 +103,7 @@ func (ds *ExampleDataServiceMySQL) FindByID(ID int64) (*model.Example, error) {
 	defer rows.Close()
 
 	if err != nil {
-		return nil, &dataservice.DSError{Cause: err}
+		return nil, &dataservice.Error{Cause: err}
 	}
 
 	return toExample(rows)
@@ -116,7 +117,7 @@ func (ds *ExampleDataServiceMySQL) FindByName(name string) (*model.Example, erro
 	defer rows.Close()
 
 	if err != nil {
-		return nil, &dataservice.DSError{Cause: err}
+		return nil, &dataservice.Error{Cause: err}
 	}
 
 	return toExample(rows)
@@ -127,7 +128,7 @@ func (ds *ExampleDataServiceMySQL) FindByName(name string) (*model.Example, erro
 func (ds *ExampleDataServiceMySQL) LogicalDeletion(ID int64, deactivationDatetime time.Time) error {
 	_, err := ds.sqlDriver.PrepareAndExecute(DeactivateExample, deactivationDatetime, ID)
 	if err != nil {
-		return &dataservice.DSError{Cause: err}
+		return &dataservice.Error{Cause: err}
 	}
 	return nil
 }
@@ -142,29 +143,46 @@ func (ds *ExampleDataServiceMySQL) Update(example *model.Example) (updatedExampl
 		example.ID,
 	)
 	if err != nil {
-		return nil, &dataservice.DSError{Cause: err}
+		return nil, &dataservice.Error{Cause: err}
 	}
 
 	affectedRows, err := rows.RowsAffected()
 	if err != nil {
-		return nil, &dataservice.DSError{Cause: err}
+		return nil, &dataservice.Error{Cause: err}
 	}
 	if affectedRows == 0 {
-		return nil, &dataservice.DSError{Message: "Couldn't update example. SQL command did not return any affected lines."}
+		return nil, &dataservice.Error{Message: "Couldn't update example. SQL command did not return any affected lines."}
 	}
 
 	return example, nil
 }
 
-// UpdateProperty is responsible for updating a particular Example property in the repository
+// UpdateProperties is responsible for updating a particular Example property in the repository
 // in a MySQL Database
-func (ds *ExampleDataServiceMySQL) UpdateProperty(propertyName string, propertyValue interface{}) error {
-	_, err := ds.sqlDriver.PrepareAndExecute(
-		fmt.Sprintf(UpdateExampleProperty, propertyName),
-		propertyValue,
+func (ds *ExampleDataServiceMySQL) UpdateProperties(ID int64, properties map[string]interface{}) error {
+	queryParams := ""
+	queryParamValues := make([]interface{}, len(properties))
+
+	for k, v := range properties {
+		queryParams += fmt.Sprintf("%s = ?,", k)
+		queryParamValues = append(queryParamValues, v)
+	}
+	strings.TrimSuffix(queryParams, ",")
+
+	rows, err := ds.sqlDriver.PrepareAndExecute(
+		fmt.Sprintf(UpdateExampleProperties, queryParams),
+		queryParamValues,
 	)
 	if err != nil {
-		return &dataservice.DSError{Cause: err}
+		return &dataservice.Error{Cause: err}
+	}
+
+	affectedRows, err := rows.RowsAffected()
+	if err != nil {
+		return &dataservice.Error{Cause: err}
+	}
+	if affectedRows == 0 {
+		return &dataservice.Error{Message: "Couldn't update example properties. SQL command did not return any affected lines."}
 	}
 	return nil
 }
@@ -178,7 +196,7 @@ func rowsToExample(rows *sql.Rows) (*model.Example, error) {
 		&example.CreatedAt,
 		&example.DeactivatedAt,
 	); err != nil {
-		return nil, &dataservice.DSError{Cause: err}
+		return nil, &dataservice.Error{Cause: err}
 	}
 	return &example, nil
 }
@@ -187,7 +205,7 @@ func toExample(rows *sql.Rows) (*model.Example, error) {
 	if rows.Next() {
 		example, err := rowsToExample(rows)
 		if err != nil {
-			return nil, &dataservice.DSError{Cause: err}
+			return nil, &dataservice.Error{Cause: err}
 		}
 		return example, nil
 	}
