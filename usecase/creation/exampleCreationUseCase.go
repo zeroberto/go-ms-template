@@ -31,6 +31,10 @@ func (ecuc *ExampleCreationUseCaseImpl) UpdateExample(example *model.Example) (*
 	if err := ecuc.notExistsByID(example.ID); err != nil {
 		return nil, err
 	}
+	example, err := ecuc.EDS.Update(example)
+	if err != nil {
+		return nil, &usecase.Error{Cause: err}
+	}
 	return example, nil
 }
 
