@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/zeroberto/go-ms-template/model"
 	"github.com/zeroberto/go-ms-template/usecase"
 	"github.com/zeroberto/go-ms-template/usecase/example/creation"
+	"github.com/zeroberto/go-ms-template/usecase/example/read"
 )
 
 func TestCreateExample(t *testing.T) {
@@ -326,9 +328,143 @@ func TestUpdateExamplePropertiesWhenEDSUpdatePropertiesReturnsErrorThenFailure(t
 	}
 }
 
+func TestListExamples(t *testing.T) {
+	expected := []model.Example{
+		model.Example{ID: 1},
+		model.Example{ID: 2},
+	}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindAllMock = func() ([]model.Example, error) {
+		return expected, nil
+	}
+
+	var eruc usecase.ExampleReadUseCase = &read.ExampleReadUseCaseImpl{EDS: eds}
+
+	got, err := eruc.ListExamples()
+
+	if err != nil {
+		t.Errorf("ListExamples() failed, error %v", err)
+	}
+
+	if !reflect.DeepEqual(expected, got) {
+		t.Errorf("ListExamples() failed, expected %v, got %v", expected, got)
+	}
+}
+
+func TestListExamplesWhenEDSFindAllReturnsErrorThenFailure(t *testing.T) {
+	expected := &usecase.Error{Cause: errors.New("error")}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindAllMock = func() ([]model.Example, error) {
+		return nil, expected
+	}
+
+	var eruc usecase.ExampleReadUseCase = &read.ExampleReadUseCaseImpl{EDS: eds}
+
+	examples, got := eruc.ListExamples()
+
+	if examples != nil {
+		t.Errorf("ListExamples() failed, expected %v, got %v", nil, examples)
+	}
+
+	if got == nil || expected.Error() != got.Error() {
+		t.Errorf("ListExamples() failed, expected %v, got %v", expected, got)
+	}
+}
+
+func TestListActiveExamples(t *testing.T) {
+	expected := []model.Example{
+		model.Example{ID: 1},
+		model.Example{ID: 2},
+	}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindActivesMock = func() ([]model.Example, error) {
+		return expected, nil
+	}
+
+	var eruc usecase.ExampleReadUseCase = &read.ExampleReadUseCaseImpl{EDS: eds}
+
+	got, err := eruc.ListActiveExamples()
+
+	if err != nil {
+		t.Errorf("ListActiveExamples() failed, error %v", err)
+	}
+
+	if !reflect.DeepEqual(expected, got) {
+		t.Errorf("ListActiveExamples() failed, expected %v, got %v", expected, got)
+	}
+}
+
+func TestListActiveExamplesWhenEDSFindActivesReturnsErrorThenFailure(t *testing.T) {
+	expected := &usecase.Error{Cause: errors.New("error")}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindActivesMock = func() ([]model.Example, error) {
+		return nil, expected
+	}
+
+	var eruc usecase.ExampleReadUseCase = &read.ExampleReadUseCaseImpl{EDS: eds}
+
+	examples, got := eruc.ListActiveExamples()
+
+	if examples != nil {
+		t.Errorf("ListActiveExamples() failed, expected %v, got %v", nil, examples)
+	}
+
+	if got == nil || expected.Error() != got.Error() {
+		t.Errorf("ListActiveExamples() failed, expected %v, got %v", expected, got)
+	}
+}
+
+func TestGetExample(t *testing.T) {
+	expected := &model.Example{ID: 1}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindByIDMock = func(ID int64) (*model.Example, error) {
+		return expected, nil
+	}
+
+	var eruc usecase.ExampleReadUseCase = &read.ExampleReadUseCaseImpl{EDS: eds}
+
+	got, err := eruc.GetExample(1)
+
+	if err != nil {
+		t.Errorf("GetExample() failed, error %v", err)
+	}
+
+	if !reflect.DeepEqual(expected, got) {
+		t.Errorf("GetExample() failed, expected %v, got %v", expected, got)
+	}
+}
+
+func TestGetExampleWhenEDSFindByIDReturnsErrorThenFailure(t *testing.T) {
+	expected := &usecase.Error{Cause: errors.New("error")}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindByIDMock = func(ID int64) (*model.Example, error) {
+		return nil, expected
+	}
+
+	var eruc usecase.ExampleReadUseCase = &read.ExampleReadUseCaseImpl{EDS: eds}
+
+	example, got := eruc.GetExample(1)
+
+	if example != nil {
+		t.Errorf("GetExample() failed, expected %v, got %v", nil, example)
+	}
+
+	if got == nil || expected.Error() != got.Error() {
+		t.Errorf("ListExamples() failed, expected %v, got %v", expected, got)
+	}
+}
+
 var edsCreateMock func(example *model.Example) (persistedExample *model.Example, err error)
 
 var edsDeleteMock func(ID int64) error
+
+var edsFindActivesMock func() ([]model.Example, error)
 
 var edsFindAllMock func() ([]model.Example, error)
 
@@ -350,6 +486,10 @@ func (eds *exampleDataServiceMock) Create(example *model.Example) (persistedExam
 
 func (eds *exampleDataServiceMock) Delete(ID int64) error {
 	return edsDeleteMock(ID)
+}
+
+func (eds *exampleDataServiceMock) FindActives() ([]model.Example, error) {
+	return edsFindActivesMock()
 }
 
 func (eds *exampleDataServiceMock) FindAll() ([]model.Example, error) {
