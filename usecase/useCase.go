@@ -25,6 +25,8 @@ type ExampleReadUseCase interface {
 	ListActiveExamples() ([]model.Example, error)
 	// GetExample is responsible for obtaining an Example according to the given identifier
 	GetExample(ID int64) (*model.Example, error)
+	// GetExampleByName is responsible for obtaining an Example according to the given name
+	GetExampleByName(name string) (*model.Example, error)
 }
 
 // ExampleRemovalUseCase is responsible for providing the business methods for
