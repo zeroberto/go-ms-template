@@ -2,6 +2,7 @@ package datamysql
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -177,7 +178,7 @@ func (ds *ExampleDataServiceMySQL) Update(example *model.Example) (updatedExampl
 		return nil, &dataservice.Error{Cause: err}
 	}
 	if affectedRows == 0 {
-		return nil, &dataservice.Error{Message: "Couldn't update example. SQL command did not return any affected lines."}
+		return nil, &dataservice.Error{Cause: errors.New("Couldn't update example. SQL command did not return any affected lines")}
 	}
 
 	return example, nil
@@ -208,7 +209,7 @@ func (ds *ExampleDataServiceMySQL) UpdateProperties(ID int64, properties map[str
 		return &dataservice.Error{Cause: err}
 	}
 	if affectedRows == 0 {
-		return &dataservice.Error{Message: "Couldn't update example properties. SQL command did not return any affected lines."}
+		return &dataservice.Error{Cause: errors.New("Couldn't update example properties. SQL command did not return any affected lines")}
 	}
 	return nil
 }

@@ -42,7 +42,7 @@ func (eruc *ExampleRemovalUseCaseImpl) notExistsByID(ID int64) error {
 		return &usecase.Error{Cause: err}
 	}
 	if example == nil {
-		return &usecase.Error{Message: "No example found for this ID"}
+		return &usecase.NotExistsError{ID: ID}
 	}
 	return nil
 }

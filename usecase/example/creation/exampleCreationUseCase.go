@@ -1,6 +1,7 @@
 package creation
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/zeroberto/go-ms-template/dataservice"
@@ -49,7 +50,7 @@ func (ecuc *ExampleCreationUseCaseImpl) UpdateExampleProperties(ID int64, proper
 	propertyNames := getUpgradeableProperties()
 	for k := range properties {
 		if !tool.ContainsString(k, propertyNames) {
-			return nil, &usecase.Error{Message: fmt.Sprintf("property %s does not exist or cannot be updated", k)}
+			return nil, &usecase.Error{Cause: fmt.Errorf("Property %s does not exist or cannot be updated", k)}
 		}
 	}
 	if tool.ContainsStringKey("Name", properties) {
@@ -73,7 +74,7 @@ func (ecuc *ExampleCreationUseCaseImpl) existsByName(name string, ID int64) erro
 		return &usecase.Error{Cause: err}
 	}
 	if example != nil && example.ID != ID {
-		return &usecase.Error{Message: "Example already exists"}
+		return &usecase.Error{Cause: errors.New("Example already exists")}
 	}
 	return nil
 }
@@ -84,7 +85,7 @@ func (ecuc *ExampleCreationUseCaseImpl) notExistsByID(ID int64) error {
 		return &usecase.Error{Cause: err}
 	}
 	if example == nil {
-		return &usecase.Error{Message: "No example found for this ID"}
+		return &usecase.NotExistsError{ID: ID}
 	}
 	return nil
 }

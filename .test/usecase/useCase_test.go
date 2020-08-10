@@ -75,7 +75,7 @@ func TestCreateExampleWhenEDSCreateReturnsErrorThenFailure(t *testing.T) {
 }
 
 func TestCreateExampleWhenNameAlreadyExistsThenFailure(t *testing.T) {
-	expected := &usecase.Error{Message: "Example already exists"}
+	expected := &usecase.Error{Cause: errors.New("Example already exists")}
 
 	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
 	edsFindByNameMock = func(name string) (*model.Example, error) {
@@ -168,7 +168,7 @@ func TestUpdateExampleWhenEDSUpdateReturnsErrorThenFailure(t *testing.T) {
 }
 
 func TestUpdateExampleWhenIDNotExistsThenFailure(t *testing.T) {
-	expected := &usecase.Error{Message: "No example found for this ID"}
+	expected := &usecase.NotExistsError{ID: 1}
 
 	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
 	edsFindByIDMock = func(ID int64) (*model.Example, error) {
@@ -177,7 +177,7 @@ func TestUpdateExampleWhenIDNotExistsThenFailure(t *testing.T) {
 
 	var ecuc usecase.ExampleCreationUseCase = &creation.ExampleCreationUseCaseImpl{EDS: eds}
 
-	example, got := ecuc.UpdateExample(&model.Example{})
+	example, got := ecuc.UpdateExample(&model.Example{ID: 1})
 
 	if example != nil {
 		t.Errorf("UpdateExample() failed, expected %v, got %v", nil, example)
@@ -189,7 +189,7 @@ func TestUpdateExampleWhenIDNotExistsThenFailure(t *testing.T) {
 }
 
 func TestUpdateExampleWhenNameAlreadyExistsThenFailure(t *testing.T) {
-	expected := &usecase.Error{Message: "Example already exists"}
+	expected := &usecase.Error{Cause: errors.New("Example already exists")}
 
 	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
 	edsFindByIDMock = func(ID int64) (*model.Example, error) {
@@ -254,7 +254,7 @@ func TestUpdateExamplePropertiesWhenPropertyIsUsefulThenSuccess(t *testing.T) {
 }
 
 func TestUpdateExamplePropertiesWhenPropertyNotExistsThenFailure(t *testing.T) {
-	expected := &usecase.Error{Message: "property Wrong does not exist or cannot be updated"}
+	expected := &usecase.Error{Cause: errors.New("Property Wrong does not exist or cannot be updated")}
 
 	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
 	edsFindByIDMock = func(ID int64) (*model.Example, error) {
@@ -277,7 +277,7 @@ func TestUpdateExamplePropertiesWhenPropertyNotExistsThenFailure(t *testing.T) {
 }
 
 func TestUpdateExamplePropertiesWhenPropertyIsNameAndNameAlreadyExistsThenFailure(t *testing.T) {
-	expected := &usecase.Error{Message: "Example already exists"}
+	expected := &usecase.Error{Cause: errors.New("Example already exists")}
 
 	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
 	edsFindByIDMock = func(ID int64) (*model.Example, error) {
@@ -522,7 +522,7 @@ func TestDeleteExample(t *testing.T) {
 }
 
 func TestDeleteExampleWhenIDNotExistsThenFailure(t *testing.T) {
-	expected := &usecase.Error{Message: "No example found for this ID"}
+	expected := &usecase.NotExistsError{ID: 1}
 
 	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
 	edsFindByIDMock = func(ID int64) (*model.Example, error) {
@@ -577,7 +577,7 @@ func TestDeleteExampleLogically(t *testing.T) {
 }
 
 func TestDeleteExampleLogicallyWhenIDNotExistsThenFailure(t *testing.T) {
-	expected := &usecase.Error{Message: "No example found for this ID"}
+	expected := &usecase.NotExistsError{ID: 1}
 
 	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
 	edsFindByIDMock = func(ID int64) (*model.Example, error) {
