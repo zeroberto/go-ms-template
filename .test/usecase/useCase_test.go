@@ -11,6 +11,7 @@ import (
 	"github.com/zeroberto/go-ms-template/usecase"
 	"github.com/zeroberto/go-ms-template/usecase/example/creation"
 	"github.com/zeroberto/go-ms-template/usecase/example/read"
+	"github.com/zeroberto/go-ms-template/usecase/example/removal"
 )
 
 func TestCreateExample(t *testing.T) {
@@ -499,6 +500,116 @@ func TestGetExampleByNameWhenEDSFindByNameReturnsErrorThenFailure(t *testing.T) 
 
 	if got == nil || expected.Error() != got.Error() {
 		t.Errorf("GetExampleByName() failed, expected %v, got %v", expected, got)
+	}
+}
+
+func TestDeleteExample(t *testing.T) {
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindByIDMock = func(ID int64) (*model.Example, error) {
+		return &model.Example{}, nil
+	}
+	edsDeleteMock = func(ID int64) error {
+		return nil
+	}
+
+	var eruc usecase.ExampleRemovalUseCase = &removal.ExampleRemovalUseCaseImpl{EDS: eds}
+
+	got := eruc.DeleteExample(1)
+
+	if got != nil {
+		t.Errorf("DeleteExample() failed, expected %v, got %v", nil, got)
+	}
+}
+
+func TestDeleteExampleWhenIDNotExistsThenFailure(t *testing.T) {
+	expected := &usecase.Error{Message: "No example found for this ID"}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindByIDMock = func(ID int64) (*model.Example, error) {
+		return nil, expected
+	}
+
+	var eruc usecase.ExampleRemovalUseCase = &removal.ExampleRemovalUseCaseImpl{EDS: eds}
+
+	got := eruc.DeleteExample(1)
+
+	if got == nil {
+		t.Errorf("DeleteExample() failed, expected %v, got %v", expected, nil)
+	}
+}
+
+func TestDeleteExampleWhenEDSDeleteReturnsErrorThenFailure(t *testing.T) {
+	expected := &usecase.Error{Cause: errors.New("error")}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindByIDMock = func(ID int64) (*model.Example, error) {
+		return &model.Example{}, nil
+	}
+	edsDeleteMock = func(ID int64) error {
+		return expected
+	}
+
+	var eruc usecase.ExampleRemovalUseCase = &removal.ExampleRemovalUseCaseImpl{EDS: eds}
+
+	got := eruc.DeleteExample(1)
+
+	if got == nil {
+		t.Errorf("DeleteExample() failed, expected %v, got %v", expected, nil)
+	}
+}
+
+func TestDeleteExampleLogically(t *testing.T) {
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindByIDMock = func(ID int64) (*model.Example, error) {
+		return &model.Example{}, nil
+	}
+	edsLogicalDeletionMock = func(ID int64, deactivationDatetime time.Time) error {
+		return nil
+	}
+
+	var eruc usecase.ExampleRemovalUseCase = &removal.ExampleRemovalUseCaseImpl{EDS: eds}
+
+	got := eruc.DeleteExampleLogically(1, time.Now())
+
+	if got != nil {
+		t.Errorf("DeleteExampleLogically() failed, expected %v, got %v", nil, got)
+	}
+}
+
+func TestDeleteExampleLogicallyWhenIDNotExistsThenFailure(t *testing.T) {
+	expected := &usecase.Error{Message: "No example found for this ID"}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindByIDMock = func(ID int64) (*model.Example, error) {
+		return nil, expected
+	}
+
+	var eruc usecase.ExampleRemovalUseCase = &removal.ExampleRemovalUseCaseImpl{EDS: eds}
+
+	got := eruc.DeleteExampleLogically(1, time.Now())
+
+	if got == nil {
+		t.Errorf("DeleteExampleLogically() failed, expected %v, got %v", expected, nil)
+	}
+}
+
+func TestDeleteExampleLogicallyWhenEDSDeleteReturnsErrorThenFailure(t *testing.T) {
+	expected := &usecase.Error{Cause: errors.New("error")}
+
+	var eds dataservice.ExampleDataService = &exampleDataServiceMock{}
+	edsFindByIDMock = func(ID int64) (*model.Example, error) {
+		return &model.Example{}, nil
+	}
+	edsLogicalDeletionMock = func(ID int64, deactivationDatetime time.Time) error {
+		return expected
+	}
+
+	var eruc usecase.ExampleRemovalUseCase = &removal.ExampleRemovalUseCaseImpl{EDS: eds}
+
+	got := eruc.DeleteExampleLogically(1, time.Now())
+
+	if got == nil {
+		t.Errorf("DeleteExampleLogically() failed, expected %v, got %v", expected, nil)
 	}
 }
 
